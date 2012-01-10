@@ -358,8 +358,7 @@
 	double var_X, var_Y, var_Z, var_R, var_G, var_B;
     KVRGBColor SampleRGB;
 
-	
-	var_X = SampleXYZ.X / 100.0;
+    var_X = SampleXYZ.X / 100.0;
 	var_Y = SampleXYZ.Y / 100.0;
 	var_Z = SampleXYZ.Z / 100.0;
 	
