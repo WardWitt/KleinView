@@ -42,7 +42,6 @@
 														   target:self 
 														 selector:@selector(getXYZ) 
                                                         userInfo:nil repeats:YES];
-    NSLog(@"%@",takeSample);
 }
 
 - (void)getAvailablePorts
@@ -76,7 +75,6 @@
 
 - (AMSerialPort *)port
 {
-	//NSLog(@"Port called");
     return port;
 }
 
@@ -88,7 +86,6 @@
         old = port;
         port = [newPort retain];
         [old release];
-		//NSLog(@"New Port called");
     }
 }
 
@@ -103,7 +100,6 @@
 	}
 	NSError *theError;
 	NSString *reply = [port readStringUsingEncoding:NSUTF8StringEncoding error:&theError];
-	NSLog(@"%@",reply);
 }
 
 - (void)getXYZ {
@@ -188,9 +184,6 @@
         [rLevelIndicator setFloatValue:temp.R*Gain];
 		[gLevelIndicator setFloatValue:temp.G*Gain];
 		[bLevelIndicator setFloatValue:temp.B*Gain];
-
-		//NSLog(@"XYZ = %f,%f,%f - Yxy = %f,%f,%f",X,Y,Z,Y,x,y);
-        //NSLog(@"Device in use %@ %lu",deviceName,[deviceName retainCount]);
 	}	
 }
 
@@ -227,7 +220,6 @@
 
     if ([[sender titleOfSelectedItem]hasPrefix:@"Empty"]) {
         [self clearCalibrationMatrix];
-        NSLog(@"Unity Calibration Matrix selected");
     }
     else{
     [self loadCalibrationMatrix:selection+1];
@@ -339,12 +331,6 @@
     XYZCalibrationMatrix[7] = [self kleinFloatMagMSB:buffer[122] magLSB:buffer[123] exponent:buffer[124]];
     XYZCalibrationMatrix[8] = [self kleinFloatMagMSB:buffer[125] magLSB:buffer[126] exponent:buffer[127]];
 
-	NSLog(@"Matrix Name = %@", matrixName);
-    NSLog(@"%f  %f  %f",XYZCalibrationMatrix[0],XYZCalibrationMatrix[1],XYZCalibrationMatrix[2]);
-    NSLog(@"%f  %f  %f",XYZCalibrationMatrix[3],XYZCalibrationMatrix[4],XYZCalibrationMatrix[5]);
-    NSLog(@"%f  %f  %f",XYZCalibrationMatrix[6],XYZCalibrationMatrix[7],XYZCalibrationMatrix[8]);
-    
-    //NSLog(@"White Spec X %f Y %f Z %f tol %f %f",WhiteSpac[0],WhiteSpac[1],WhiteSpac[2],WhiteSpac[3],WhiteSpac[4]);
     [matrixName release];
 }
 
