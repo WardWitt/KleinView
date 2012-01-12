@@ -106,10 +106,12 @@
     if ([reply hasPrefix:@"P0"]) {
         probeFound = YES;
         [statusTextField setStringValue:[reply substringWithRange:NSMakeRange(2, 15)]];
+        [warningTextField setStringValue:@""];
     }
     else
     {
         [statusTextField setStringValue:@"Probe not found"];
+        [warningTextField setStringValue:@"Probe not found!"];
         [calibrationPopUp removeAllItems];
         probeFound = NO;
     }
@@ -131,6 +133,7 @@
         [reply getBytes:&buffer length:15];
         //test for valad data
         if (buffer[0] == 'N' && buffer[13] == '0') {
+            [warningTextField setStringValue:@""];
             // Found that you must divide raw samples by two to get correct value
             Xraw = [self kleinFloatMagMSB:buffer[2] magLSB:buffer[3] exponent:buffer[4]]/2;
             Yraw = [self kleinFloatMagMSB:buffer[5] magLSB:buffer[6] exponent:buffer[7]]/2;
@@ -197,6 +200,9 @@
             [rLevelIndicator setFloatValue:temp.R*Gain];
             [gLevelIndicator setFloatValue:temp.G*Gain];
             [bLevelIndicator setFloatValue:temp.B*Gain];
+        }
+        if (buffer[13] == 'L') {
+            [warningTextField setStringValue:@"Aiming lights on!"];
         }
     }
 }

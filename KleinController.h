@@ -57,6 +57,7 @@ KVYxyColor;
     NSString *deviceName;
 	NSMutableArray *calibrations;
     IBOutlet NSTextField *statusTextField;
+    IBOutlet NSTextField *warningTextField;
 	IBOutlet NSPopUpButton *serialPopUp;
 	IBOutlet NSPopUpButton *calibrationPopUp;
 	IBOutlet NSTextField *XTextField;
