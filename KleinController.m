@@ -25,7 +25,11 @@
 @implementation KleinController
 
 -(void)awakeFromNib
-{
+{	// register for port add/remove notification
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didAddPorts:) name:AMSerialPortListDidAddPortsNotification object:nil];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didRemovePorts:) name:AMSerialPortListDidRemovePortsNotification object:nil];
+	[AMSerialPortList sharedPortList]; // initialize port list to arm notifications
+    
     [self getAvailablePorts];
 	defaults = [NSUserDefaults standardUserDefaults];
 	[scalePopup selectItemAtIndex:[defaults integerForKey:@"lastUsedScale"]];
@@ -41,7 +45,7 @@
     NSTimer *takeSample = [NSTimer scheduledTimerWithTimeInterval:0.125
 														   target:self 
 														 selector:@selector(getXYZ) 
-                                                        userInfo:nil repeats:YES];
+                                                         userInfo:nil repeats:YES];
 }
 
 - (void)getAvailablePorts
@@ -70,7 +74,7 @@
 	} else { // an error occured while creating port
 		[self setPort:nil];
 	}
-
+    
 }
 
 - (AMSerialPort *)port
@@ -96,133 +100,145 @@
 	}
 	if([port isOpen]) { // in case an error occured while opening the port
 		[port writeString:@"P0\r" usingEncoding:NSUTF8StringEncoding error:NULL];
-		
-	}
+    }
 	NSError *theError;
 	NSString *reply = [port readStringUsingEncoding:NSUTF8StringEncoding error:&theError];
+    if ([reply hasPrefix:@"P0"]) {
+        probeFound = YES;
+        [statusTextField setStringValue:[reply substringWithRange:NSMakeRange(2, 15)]];
+    }
+    else
+    {
+        [statusTextField setStringValue:@"Probe not found"];
+        [calibrationPopUp removeAllItems];
+        probeFound = NO;
+    }
 }
 
 - (void)getXYZ {
 	static unsigned char buffer[15];
 	float Xraw,Yraw,Zraw,x,y;
-	
-	if (!port) {
-		// open a new port if we don't already have one
-		[self initPort];
-	}
-	if([port isOpen]) { // in case an error occured while opening the port
-		[port writeString:@"N5\r" usingEncoding:NSUTF8StringEncoding error:NULL];
+    if (probeFound) {
+        if (!port) {
+            // open a new port if we don't already have one
+            [self initPort];
+        }
+        if([port isOpen]) { // in case an error occured while opening the port
+            [port writeString:@"N5\r" usingEncoding:NSUTF8StringEncoding error:NULL];
+        }
+        NSError *theError;
+        NSData *reply = [port readBytes:15 error:&theError];
+        [reply getBytes:&buffer length:15];
+        //test for valad data
+        if (buffer[0] == 'N' && buffer[13] == '0') {
+            // Found that you must divide raw samples by two to get correct value
+            Xraw = [self kleinFloatMagMSB:buffer[2] magLSB:buffer[3] exponent:buffer[4]]/2;
+            Yraw = [self kleinFloatMagMSB:buffer[5] magLSB:buffer[6] exponent:buffer[7]]/2;
+            Zraw = [self kleinFloatMagMSB:buffer[8] magLSB:buffer[9] exponent:buffer[10]]/2;
+            
+            SampleXYZ.X = Xraw * XYZCalibrationMatrix[0] + Yraw * XYZCalibrationMatrix[1] + Zraw * XYZCalibrationMatrix[2];
+            SampleXYZ.Y = Xraw * XYZCalibrationMatrix[3] + Yraw * XYZCalibrationMatrix[4] + Zraw * XYZCalibrationMatrix[5];
+            SampleXYZ.Z = Xraw * XYZCalibrationMatrix[6] + Yraw * XYZCalibrationMatrix[7] + Zraw * XYZCalibrationMatrix[8];
+            
+            [XTextField setFloatValue:SampleXYZ.X];
+            [YTextField setFloatValue:SampleXYZ.Y];
+            [ZTextField setFloatValue:SampleXYZ.Z];
+            
+            if ([[luminanceUnitsPopup titleOfSelectedItem]isEqualToString:@"ftL"]) {
+                [LuminanceTextField setFloatValue:SampleXYZ.Y*0.29188558];
+            }else{
+                [LuminanceTextField setFloatValue:SampleXYZ.Y];
+            }
+            x = SampleXYZ.X/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
+            y = SampleXYZ.Y/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
+            
+            [x_TextField setFloatValue:x];
+            [y_TextField setFloatValue:y];
+            [Y_TextField setFloatValue:SampleXYZ.Y];
+            
+            // CIE LAB
+            float ref_X = 95.047; //Observer= 2°, Illuminant= D65
+            float ref_Y = 100.000;
+            float ref_Z = 108.883;
+            float var_X, var_Y, var_Z, CIE_L, CIE_a, CIE_b;
+            
+            var_X = SampleXYZ.X / ref_X;
+            var_Y = SampleXYZ.Y / ref_Y;
+            var_Z = SampleXYZ.Z / ref_Z;
+            
+            if ( var_X > 0.008856 ){
+                var_X = pow(var_X, 0.33333333);
+            }else {
+                var_X = (7.787 * var_X) + (16/116);
+            }
+            if ( var_Y > 0.008856 ){
+                var_Y = pow(var_Y, 0.33333333);
+            }else {
+                var_Y = (7.787 * var_Y) + (16 / 116);
+            }
+            if ( var_Z > 0.008856 ){
+                var_Z = pow(var_Z, 0.33333333);
+            }else{
+                var_Z = (7.787 * var_Z) + (16 / 116);
+            }
+            
+            CIE_L = (116 * var_Y) - 16;
+            CIE_a = 500 * (var_X - var_Y);
+            CIE_b = 200 * (var_Y - var_Z);
+            
+            [L_TextField setFloatValue:CIE_L];
+            [a_TextField setFloatValue:CIE_a];
+            [b_TextField setFloatValue:CIE_b];
+            [labView setA:CIE_a B:CIE_b];
+            
+            KVRGBColor temp = [self RGBfromXYZ:SampleXYZ];
+            float Gain = 5 / temp.G;
+            
+            [rLevelIndicator setFloatValue:temp.R*Gain];
+            [gLevelIndicator setFloatValue:temp.G*Gain];
+            [bLevelIndicator setFloatValue:temp.B*Gain];
+        }
     }
-	NSError *theError;
-	NSData *reply = [port readBytes:15 error:&theError];
-	[reply getBytes:&buffer length:15];
-	//test for valad data
-	if (buffer[0] == 'N' && buffer[13] == '0') {
-        // Found that you must divide raw samples by two to get correct value
-        Xraw = [self kleinFloatMagMSB:buffer[2] magLSB:buffer[3] exponent:buffer[4]]/2;
-		Yraw = [self kleinFloatMagMSB:buffer[5] magLSB:buffer[6] exponent:buffer[7]]/2;
-        Zraw = [self kleinFloatMagMSB:buffer[8] magLSB:buffer[9] exponent:buffer[10]]/2;
-        
-        SampleXYZ.X = Xraw * XYZCalibrationMatrix[0] + Yraw * XYZCalibrationMatrix[1] + Zraw * XYZCalibrationMatrix[2];
-        SampleXYZ.Y = Xraw * XYZCalibrationMatrix[3] + Yraw * XYZCalibrationMatrix[4] + Zraw * XYZCalibrationMatrix[5];
-        SampleXYZ.Z = Xraw * XYZCalibrationMatrix[6] + Yraw * XYZCalibrationMatrix[7] + Zraw * XYZCalibrationMatrix[8];
-        
-        [XTextField setFloatValue:SampleXYZ.X];
-		[YTextField setFloatValue:SampleXYZ.Y];
-		[ZTextField setFloatValue:SampleXYZ.Z];
-        
-        if ([[luminanceUnitsPopup titleOfSelectedItem]isEqualToString:@"ftL"]) {
-            [LuminanceTextField setFloatValue:SampleXYZ.Y*0.29188558];
-        }else{
-            [LuminanceTextField setFloatValue:SampleXYZ.Y];
-        }
-        x = SampleXYZ.X/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
-        y = SampleXYZ.Y/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
-        
-        [x_TextField setFloatValue:x];
-        [y_TextField setFloatValue:y];
-        [Y_TextField setFloatValue:SampleXYZ.Y];
-        
-        // CIE LAB
-        float ref_X = 95.047; //Observer= 2°, Illuminant= D65
-        float ref_Y = 100.000;
-        float ref_Z = 108.883;
-        float var_X, var_Y, var_Z, CIE_L, CIE_a, CIE_b;
-        
-        var_X = SampleXYZ.X / ref_X;
-        var_Y = SampleXYZ.Y / ref_Y;
-        var_Z = SampleXYZ.Z / ref_Z;
-        
-        if ( var_X > 0.008856 ){
-            var_X = pow(var_X, 0.33333333);
-        }else {
-            var_X = (7.787 * var_X) + (16/116);
-        }
-        if ( var_Y > 0.008856 ){
-            var_Y = pow(var_Y, 0.33333333);
-        }else {
-            var_Y = (7.787 * var_Y) + (16 / 116);
-        }
-        if ( var_Z > 0.008856 ){
-            var_Z = pow(var_Z, 0.33333333);
-        }else{
-            var_Z = (7.787 * var_Z) + (16 / 116);
-        }
-        
-        CIE_L = (116 * var_Y) - 16;
-        CIE_a = 500 * (var_X - var_Y);
-        CIE_b = 200 * (var_Y - var_Z);
-        
-        [L_TextField setFloatValue:CIE_L];
-        [a_TextField setFloatValue:CIE_a];
-        [b_TextField setFloatValue:CIE_b];
-        [labView setA:CIE_a B:CIE_b];
-        
-        KVRGBColor temp = [self RGBfromXYZ:SampleXYZ];
-        float Gain = 5 / temp.G;
-
-        [rLevelIndicator setFloatValue:temp.R*Gain];
-		[gLevelIndicator setFloatValue:temp.G*Gain];
-		[bLevelIndicator setFloatValue:temp.B*Gain];
-	}	
 }
 
 - (void)getCalibrationList{
-	if (!port) {
-		// open a new port if we don't already have one
-		[self initPort];
-	}
-	if([port isOpen]) { // in case an error occured while opening the port
-		[port writeString:@"D7\r" usingEncoding:NSUTF8StringEncoding error:NULL];
-	}
-	calibrations = [NSMutableArray arrayWithCapacity:96];
-	[port setReadTimeout:6];
-	NSData *reply = [port readBytes:1925 error:NULL];
-	int loc;
-	for(loc = 2; loc < 1922; loc +=20)
-	{
-		NSString *temp = [[NSString alloc]initWithData:[reply subdataWithRange:NSMakeRange(loc,20)] encoding:NSUTF8StringEncoding];
-		if (temp != nil) {
-			[calibrations addObject:temp];
-		}
-		else
-			[calibrations addObject:[NSString stringWithFormat:@"Empty %i",loc/20]];
-		[temp release];
-	}
-	[calibrationPopUp removeAllItems];
-	[calibrationPopUp addItemsWithTitles:calibrations];
+    if (probeFound) {
+        if (!port) {
+            // open a new port if we don't already have one
+            [self initPort];
+        }
+        if([port isOpen]) { // in case an error occured while opening the port
+            [port writeString:@"D7\r" usingEncoding:NSUTF8StringEncoding error:NULL];
+        }
+        calibrations = [NSMutableArray arrayWithCapacity:96];
+        [port setReadTimeout:6];
+        NSData *reply = [port readBytes:1925 error:NULL];
+        int loc;
+        for(loc = 2; loc < 1922; loc +=20)
+        {
+            NSString *temp = [[NSString alloc]initWithData:[reply subdataWithRange:NSMakeRange(loc,20)] encoding:NSUTF8StringEncoding];
+            if (temp != nil) {
+                [calibrations addObject:temp];
+            }
+            else
+                [calibrations addObject:[NSString stringWithFormat:@"Empty %i",loc/20]];
+            [temp release];
+        }
+        [calibrationPopUp removeAllItems];
+        [calibrationPopUp addItemsWithTitles:calibrations];
+    }
 }
 
 -(IBAction)chooseCalibration:(id)sender
 {
     int selection = [sender indexOfSelectedItem];
 	[defaults setInteger:selection forKey:@"lastUsedCalibration"];
-
+    
     if ([[sender titleOfSelectedItem]hasPrefix:@"Empty"]) {
         [self clearCalibrationMatrix];
     }
     else{
-    [self loadCalibrationMatrix:selection+1];
+        [self loadCalibrationMatrix:selection+1];
     }
 }
 
@@ -236,7 +252,7 @@
 	[self getCalibrationList];
     [calibrationPopUp selectItemAtIndex:[defaults integerForKey:@"lastUsedCalibration"]];
     [calibrationPopUp sendAction:@selector(chooseCalibration:) to:self];
-
+    
 }
 
 
@@ -282,7 +298,7 @@
 - (IBAction)setLuminanceUnits:(id)sender{
     int selection = [sender indexOfSelectedItem];
 	[defaults setInteger:selection forKey:@"lastUsedLuminanceUnits"];
-
+    
 }
 
 - (void)loadCalibrationMatrix:(int)matrixNumber{
@@ -330,7 +346,7 @@
     XYZCalibrationMatrix[6] = [self kleinFloatMagMSB:buffer[119] magLSB:buffer[120] exponent:buffer[121]];
     XYZCalibrationMatrix[7] = [self kleinFloatMagMSB:buffer[122] magLSB:buffer[123] exponent:buffer[124]];
     XYZCalibrationMatrix[8] = [self kleinFloatMagMSB:buffer[125] magLSB:buffer[126] exponent:buffer[127]];
-
+    
     [matrixName release];
 }
 
@@ -357,7 +373,7 @@
 {
 	double var_X, var_Y, var_Z, var_R, var_G, var_B;
     KVRGBColor SampleRGB;
-
+    
     var_X = SampleXYZ.X / 100.0;
 	var_Y = SampleXYZ.Y / 100.0;
 	var_Z = SampleXYZ.Z / 100.0;
@@ -385,4 +401,13 @@
     XYZCalibrationMatrix[8] = 1.0;
 }
 
+- (void)didAddPorts:(NSNotification *)theNotification
+{
+    [self getAvailablePorts];
+}
+
+- (void)didRemovePorts:(NSNotification *)theNotification
+{
+    [self getAvailablePorts];
+}
 @end

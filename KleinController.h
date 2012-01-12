@@ -53,8 +53,10 @@ KVYxyColor;
 @interface KleinController : NSObject {
 	NSUserDefaults *defaults;
 	AMSerialPort *port;
+    BOOL probeFound;
     NSString *deviceName;
 	NSMutableArray *calibrations;
+    IBOutlet NSTextField *statusTextField;
 	IBOutlet NSPopUpButton *serialPopUp;
 	IBOutlet NSPopUpButton *calibrationPopUp;
 	IBOutlet NSTextField *XTextField;

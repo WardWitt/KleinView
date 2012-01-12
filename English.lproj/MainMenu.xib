@@ -2,9 +2,9 @@
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="8.00">
 	<data>
 		<int key="IBDocument.SystemTarget">1060</int>
-		<string key="IBDocument.SystemVersion">11D36</string>
+		<string key="IBDocument.SystemVersion">11D42</string>
 		<string key="IBDocument.InterfaceBuilderVersion">1938</string>
-		<string key="IBDocument.AppKitVersion">1138.29</string>
+		<string key="IBDocument.AppKitVersion">1138.32</string>
 		<string key="IBDocument.HIToolboxVersion">568.00</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginVersions">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1538,6 +1538,25 @@
 								<reference key="NSTextColor" ref="545358494"/>
 							</object>
 						</object>
+						<object class="NSTextField" id="463968513">
+							<reference key="NSNextResponder" ref="439893737"/>
+							<int key="NSvFlags">268</int>
+							<string key="NSFrame">{{29, 16}, {332, 17}}</string>
+							<reference key="NSSuperview" ref="439893737"/>
+							<reference key="NSWindow"/>
+							<string key="NSReuseIdentifierKey">_NS:3944</string>
+							<bool key="NSEnabled">YES</bool>
+							<object class="NSTextFieldCell" key="NSCell" id="254059433">
+								<int key="NSCellFlags">68288064</int>
+								<int key="NSCellFlags2">272630784</int>
+								<string key="NSContents">Label</string>
+								<reference key="NSSupport" ref="442915058"/>
+								<string key="NSCellIdentifier">_NS:3944</string>
+								<reference key="NSControlView" ref="463968513"/>
+								<reference key="NSBackgroundColor" ref="220305439"/>
+								<reference key="NSTextColor" ref="545358494"/>
+							</object>
+						</object>
 					</array>
 					<string key="NSFrameSize">{600, 518}</string>
 					<reference key="NSSuperview"/>
@@ -1837,6 +1856,14 @@
 					<int key="connectionID">671</int>
 				</object>
 				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">statusTextField</string>
+						<reference key="source" ref="291712067"/>
+						<reference key="destination" ref="463968513"/>
+					</object>
+					<int key="connectionID">674</int>
+				</object>
+				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
 						<string key="label">takeFloatValueFrom:</string>
 						<reference key="source" ref="527797441"/>
@@ -2051,6 +2078,7 @@
 							<reference ref="652402533"/>
 							<reference ref="603830553"/>
 							<reference ref="617812839"/>
+							<reference ref="463968513"/>
 						</array>
 						<reference key="parent" ref="972006081"/>
 					</object>
@@ -2743,6 +2771,19 @@
 						<reference key="object" ref="302169513"/>
 						<reference key="parent" ref="446349227"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">672</int>
+						<reference key="object" ref="463968513"/>
+						<array class="NSMutableArray" key="children">
+							<reference ref="254059433"/>
+						</array>
+						<reference key="parent" ref="439893737"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">673</int>
+						<reference key="object" ref="254059433"/>
+						<reference key="parent" ref="463968513"/>
+					</object>
 				</array>
 			</object>
 			<dictionary class="NSMutableDictionary" key="flattenedProperties">
@@ -2880,13 +2921,15 @@
 				<string key="666.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="667.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="668.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<string key="672.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<string key="673.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="92.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 			</dictionary>
 			<dictionary class="NSMutableDictionary" key="unlocalizedProperties"/>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">671</int>
+			<int key="maxID">674</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2935,6 +2978,7 @@
 						<string key="rLevelIndicator">WWLevelIndicator</string>
 						<string key="scalePopup">NSPopUpButton</string>
 						<string key="serialPopUp">NSPopUpButton</string>
+						<string key="statusTextField">NSTextField</string>
 						<string key="upperScaleTextField">NSTextField</string>
 						<string key="x_TextField">NSTextField</string>
 						<string key="y_TextField">NSTextField</string>
@@ -3007,6 +3051,10 @@
 						<object class="IBToOneOutletInfo" key="serialPopUp">
 							<string key="name">serialPopUp</string>
 							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="statusTextField">
+							<string key="name">statusTextField</string>
+							<string key="candidateClassName">NSTextField</string>
 						</object>
 						<object class="IBToOneOutletInfo" key="upperScaleTextField">
 							<string key="name">upperScaleTextField</string>
