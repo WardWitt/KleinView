@@ -231,6 +231,7 @@
             [temp release];
         }
         [calibrationPopUp removeAllItems];
+        [calibrationPopUp addItemWithTitle:@"Klein LCD File"];
         [calibrationPopUp addItemsWithTitles:calibrations];
     }
 }
@@ -240,11 +241,11 @@
     int selection = [sender indexOfSelectedItem];
 	[defaults setInteger:selection forKey:@"lastUsedCalibration"];
     
-    if ([[sender titleOfSelectedItem]hasPrefix:@"Empty"]) {
+    if ([[sender titleOfSelectedItem]hasPrefix:@"Empty"]||[[sender titleOfSelectedItem]isEqualToString:@"Klein LCD File"]) {
         [self clearCalibrationMatrix];
     }
     else{
-        [self loadCalibrationMatrix:selection+1];
+        [self loadCalibrationMatrix:selection];
     }
 }
 
@@ -255,9 +256,11 @@
     deviceName = portName;
     [self initPort];
 	[self getProbeModelSN];
-	[self getCalibrationList];
-    [calibrationPopUp selectItemAtIndex:[defaults integerForKey:@"lastUsedCalibration"]];
-    [calibrationPopUp sendAction:@selector(chooseCalibration:) to:self];
+    if (probeFound) {
+        [self getCalibrationList];
+        [calibrationPopUp selectItemAtIndex:[defaults integerForKey:@"lastUsedCalibration"]];
+        [calibrationPopUp sendAction:@selector(chooseCalibration:) to:self];
+    }
     
 }
 
