@@ -52,7 +52,6 @@
     NSRect        bounds = [self bounds];
 
     NSBezierPath*    clipShape = [NSBezierPath bezierPath];
-    //[clipShape appendBezierPathWithRoundedRect:NSMakeRect(3.0, 3.0, 194.0, 194.0) xRadius:8 yRadius:8];
     [clipShape appendBezierPathWithRoundedRect:bounds xRadius:8 yRadius:8];
     
     NSRect  target = NSMakeRect(NSMidX(bounds)-25,NSMidY(bounds)-25,50.0,50.0);

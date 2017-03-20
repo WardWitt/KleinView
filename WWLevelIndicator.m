@@ -32,7 +32,7 @@ NSImage *levelImage;
 - (id)initWithFrame:(NSRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-		imageFile = [NSString stringWithString:@"Green.png"];
+		imageFile = @"Green.png";
 		baseImage = [[NSImage imageNamed:@"base.png"]retain];
 		maxValue = 10.0;
 		minValue = 0.0;

@@ -42,6 +42,10 @@
 	[gLevelIndicator setImageFile:@"Green.png"];
 	[bLevelIndicator setImageFile:@"Blue.png"];
     
+    NSString *logPathTilde = @"~/Desktop/KleinView.txt";
+    logPath = [logPathTilde stringByExpandingTildeInPath];
+    [logPath retain];
+    
     NSTimer *takeSample = [NSTimer scheduledTimerWithTimeInterval:0.125
 														   target:self 
 														 selector:@selector(getXYZ) 
@@ -118,7 +122,9 @@
 }
 
 - (void)getXYZ {
-	static unsigned char buffer[15];
+    NSString *logString;
+    NSData *logData;
+    static unsigned char buffer[15];
 	float Xraw,Yraw,Zraw,x,y;
     if (probeFound) {
         if (!port) {
@@ -149,9 +155,33 @@
             
             if ([[luminanceUnitsPopup titleOfSelectedItem]isEqualToString:@"ftL"]) {
                 [LuminanceTextField setFloatValue:SampleXYZ.Y*0.29188558];
-            }else{
+                if(logValues){
+                    if(logFileHandle == nil) {
+                        NSString *emptyFile = @"";
+                        [emptyFile writeToFile:logPath atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+                        logFileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
+                        [logFileHandle retain];
+                    }
+                    logString = [NSString stringWithFormat:@"%f\n", SampleXYZ.Y*0.29188558];
+                    logData = [logString dataUsingEncoding:NSUTF8StringEncoding];
+                    [logFileHandle writeData:logData];
+                }
+             }else{
                 [LuminanceTextField setFloatValue:SampleXYZ.Y];
+                 if(logValues){
+                     if(logFileHandle == nil) {
+                         NSString *emptyFile = @"";
+                         [emptyFile writeToFile:logPath atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+                         logFileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
+                         [logFileHandle retain];
+                     }
+                    logString = [NSString stringWithFormat:@"%f\n", SampleXYZ.Y];
+                    logData = [logString dataUsingEncoding:NSUTF8StringEncoding];
+                     [logFileHandle writeData:logData];
+                 }
             }
+            
+
             x = SampleXYZ.X/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
             y = SampleXYZ.Y/(SampleXYZ.X+SampleXYZ.Y+SampleXYZ.Z);
             
@@ -304,6 +334,10 @@
 	}
 }
 
+- (IBAction)createLog:(id)sender{
+    logValues = [sender state];
+}
+
 - (IBAction)setLuminanceUnits:(id)sender{
     int selection = [sender indexOfSelectedItem];
 	[defaults setInteger:selection forKey:@"lastUsedLuminanceUnits"];
@@ -355,7 +389,6 @@
     XYZCalibrationMatrix[6] = [self kleinFloatMagMSB:buffer[119] magLSB:buffer[120] exponent:buffer[121]];
     XYZCalibrationMatrix[7] = [self kleinFloatMagMSB:buffer[122] magLSB:buffer[123] exponent:buffer[124]];
     XYZCalibrationMatrix[8] = [self kleinFloatMagMSB:buffer[125] magLSB:buffer[126] exponent:buffer[127]];
-    
     [matrixName release];
 }
 

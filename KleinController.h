@@ -82,12 +82,16 @@ KVYxyColor;
     float WhiteSpac[5];
     float XYZCalibrationMatrix[9];
     KVXYZColor SampleXYZ;
+    bool logValues;
+    NSFileHandle *logFileHandle;
+    NSString *logPath;
 }
 
 - (IBAction)chooseCalibration:(id)sender;
 - (IBAction)setScale:(id)sender;
 - (IBAction)setLuminanceUnits:(id)sender;
 - (IBAction)selectSerialPort:(id)sender;
+- (IBAction)createLog:(id)sender;
 - (void)getAvailablePorts;
 - (void)setPort:(AMSerialPort *)newPort;
 - (void)initPort;
